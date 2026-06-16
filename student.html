@@ -1719,6 +1719,13 @@
         // 外部呼叫：同步對話數據到雲端，供後台即時查閱
         window.syncCaseToCloud = async function(userText, riskLevel, botReply) {
             if (!db || !auth || !auth.currentUser) return;
+            
+            // 安全防範：防止教職員帳號 (social999, teacher123) 被誤當成學生個案上傳
+            const staffIds = ['SOCIAL999', 'TEACHER123'];
+            if (staffIds.includes(currentStudentId.toUpperCase())) {
+                console.log("[小樹洞] 偵測到教職員帳號，跳過數據同步。");
+                return;
+            }
 
             const nameInput = document.getElementById('student-display-name');
             const chosenName = nameInput && nameInput.value.trim() !== '' ? nameInput.value.trim() : currentStudentId;

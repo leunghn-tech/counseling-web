@@ -517,7 +517,11 @@
             let followUpCount = 0;
             let stableCount = 0;
 
-            rawStudentDatabase.forEach(student => {
+            // 過濾掉教職員測試帳號
+            const staffIds = ['SOCIAL999', 'TEACHER123'];
+            const filteredDatabase = rawStudentDatabase.filter(student => !staffIds.includes(student.id.toUpperCase()));
+            
+            filteredDatabase.forEach(student => {
                 if (student.riskLevel === 'red') emergencyCount++;
                 else if (student.riskLevel === 'yellow') followUpCount++;
                 else stableCount++;
@@ -529,11 +533,11 @@
             const stableCounterEl = document.getElementById('stable-counter');
 
             if (emergencyCounterEl) emergencyCounterEl.innerText = emergencyCount;
-            if (totalCounterEl) totalCounterEl.innerText = rawStudentDatabase.length;
+            if (totalCounterEl) totalCounterEl.innerText = filteredDatabase.length;
             if (followUpCounterEl) followUpCounterEl.innerText = followUpCount;
             if (stableCounterEl) stableCounterEl.innerText = stableCount;
 
-            if (rawStudentDatabase.length === 0) {
+            if (filteredDatabase.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="6" class="px-6 py-12 text-center text-slate-400">
@@ -548,7 +552,7 @@
                 return;
             }
 
-            rawStudentDatabase.forEach(student => {
+            filteredDatabase.forEach(student => {
                 const isHighRisk = student.riskLevel === 'red';
                 const isTeacherView = currentActiveRole === 'teacher';
 
