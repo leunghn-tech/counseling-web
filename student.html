@@ -11,9 +11,11 @@
         // 前置安全防範：檢查網址中是否有學號 (sid)。若沒有，則在非 Blob（Canvas預覽）環境下強制重定向回 index.html (登入首頁)
         const urlParams = new URLSearchParams(window.location.search);
         const studentId = urlParams.get('sid');
+        // 如果沒有學號且不在 blob 預覽環境，且本地也沒有匿名 ID，才跳轉回登入頁
         if (!studentId || studentId.trim() === '') {
-            if (window.location.protocol !== 'blob:') {
-                window.location.replace('index.html');
+            if (window.location.protocol !== 'blob:' && !localStorage.getItem('treehole_anonymous_id')) {
+                // 註釋掉強制跳轉，允許匿名訪問
+                // window.location.replace('index.html');
             }
         }
     </script>
@@ -21,6 +23,9 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    animation: {
+                        'spin-slow': 'spin 8s linear infinite',
+                    },
                     colors: {
                         warm: { 50: '#fdf8f5', 100: '#fbece1', 200: '#f7d8c4', 300: '#f3c1a3', 400: '#eea77e', 500: '#e89e75', 600: '#d97d4b' },
                         sage: { 50: '#f4fbf7', 100: '#e6f7ed', 200: '#c2edd3', 300: '#86d4a5', 400: '#68c48d', 500: '#5ab27f', 600: '#469b6a' },
@@ -1754,7 +1759,12 @@
                 const now = new Date();
                 const timeString = now.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
                 
-                // 獲取當前雲端狀態，避免覆蓋「跟進中」等狀態
+                // 1. 先獲取雲端現有數據，確認是否已有 status
+                const caseSnap = await getDoc(caseDocRef);
+                const existingData = caseSnap.exists() ? caseSnap.data() : null;
+                const currentStatus = (existingData && existingData.status) ? existingData.status : "未處理";
+
+                // 2. 執行同步，保留或初始化狀態
                 await setDoc(caseDocRef, {
                     id: currentStudentId,
                     name: chosenName,
@@ -1763,27 +1773,13 @@
                     trend: riskLevel === 'red' ? "📉 急速下滑" : (riskLevel === 'yellow' ? "➡️ 起伏不穩" : "📈 情緒平穩"),
                     latestChat: userText,
                     intentTags: tags,
-                    // status: "未處理", // 移除這行，避免每次對話都重置狀態
+                    status: currentStatus, // 使用獲取到的狀態，避免覆蓋
                     lastUpdated: serverTimestamp(),
                     history: arrayUnion(
                         { time: `今日 ${timeString}`, role: "student", text: userText },
                         { time: `今日 ${timeString}`, role: "counselor", text: botReply }
                     )
                 }, { merge: true });
-                
-                // 如果是新個案，則初始化狀態
-                await updateDoc(caseDocRef, {
-                    status: "未處理"
-                }).catch(() => {
-                    // 如果文件不存在，updateDoc 會失敗，這沒關係，因為 setDoc 已經處理了初始化
-                    // 但我們希望在 setDoc 時只在沒有 status 時才設置
-                });
-                
-                // 修正：更安全的狀態初始化
-                const caseSnap = await getDoc(caseDocRef);
-                if (!caseSnap.exists() || !caseSnap.data().status) {
-                    await updateDoc(caseDocRef, { status: "未處理" });
-                }
                 console.log("[小樹洞] 雲端同步成功！");
             } catch (error) {
                 console.error("雲端數據安全同步失敗:", error);
