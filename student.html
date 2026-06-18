@@ -759,7 +759,15 @@
             if (!historyContainer) return;
             const storageKey = `treehole_diary_${currentStudentId}`;
             const savedDiary = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            if (savedDiary.length === 0) { historyContainer.innerHTML = '<p class="text-xs text-slate-400 italic">目前還沒有紀錄喔，寫下你的第一篇日記吧！</p>'; return; }
+            if (savedDiary.length === 0) { 
+                historyContainer.innerHTML = `
+                    <div class="py-8 text-center text-slate-400">
+                        <i class="fa-solid fa-feather-pointed text-3xl mb-2 opacity-20"></i>
+                        <p class="text-xs italic">目前還沒有紀錄喔，寫下你的第一篇日記吧！</p>
+                    </div>
+                `; 
+                return; 
+            }
             historyContainer.innerHTML = '';
             savedDiary.slice().reverse().forEach(entry => {
                 let moodEmoji = "😐";
@@ -835,9 +843,10 @@
             renderDefaultQuickReplies(); setInputLock(false); setPetEmotion('normal');
             document.getElementById('chat-box').innerHTML = `
                 <div id="onboarding-scale" class="max-w-xl mx-auto mt-6 mb-10 fade-in">
-                    <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-sky-100 text-center">
-                        <h3 class="font-bold text-slate-800 text-lg md:text-2xl mb-2">嗨！今天的心情怎麼樣呢？</h3>
-                        <p class="text-xs md:text-sm text-slate-500 mb-6">點擊一個表情，我們從這裡開始聊聊：</p>
+                    <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-sky-100 text-center relative overflow-hidden">
+                        <div class="absolute -right-6 -top-6 w-20 h-20 bg-sky-50 rounded-full blur-xl opacity-60"></div>
+                        <h3 class="font-bold text-slate-800 text-lg md:text-2xl mb-2 relative z-10">嗨！今天的心情怎麼樣呢？</h3>
+                        <p class="text-xs md:text-sm text-slate-500 mb-6 relative z-10">點擊一個表情，我們從這裡開始聊聊：</p>
                         
                         <!-- 新增：名稱或暱稱選填欄位 -->
                         <div class="mb-6 max-w-xs mx-auto text-left">

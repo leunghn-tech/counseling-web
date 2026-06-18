@@ -540,11 +540,15 @@
             if (filteredDatabase.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                        <td colspan="6" class="px-6 py-16 text-center">
                             <div class="flex flex-col items-center justify-center">
-                                <i class="fa-solid fa-folder-open text-4xl mb-3 text-slate-300"></i>
-                                <span class="font-bold">目前暫無活躍學生對話個案</span>
-                                <span class="text-xs mt-1">前端學生進行心情打卡或對話後，資料將自動同步至此。</span>
+                                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mb-4 shadow-inner">
+                                    <i class="fa-solid fa-inbox text-2xl"></i>
+                                </div>
+                                <span class="font-bold text-slate-500 text-base">目前暫無活躍學生個案</span>
+                                <p class="text-xs text-slate-400 mt-2 max-w-xs mx-auto leading-relaxed">
+                                    當學生在前台進行心情打卡或開始對話時，系統將會實時依據 AI 識別結果在此顯示個案資訊。
+                                </p>
                             </div>
                         </td>
                     </tr>
@@ -824,12 +828,33 @@
             const input = document.getElementById("student-search-input");
             const filter = input.value.toUpperCase();
             const tbody = document.getElementById("monitoring-table-body");
-            const trs = tbody.getElementsByTagName("tr");
+            const trs = Array.from(tbody.getElementsByTagName("tr"));
+            
+            // 如果是空狀態行，則不進行過濾
+            if (trs.length === 1 && trs[0].textContent.includes("目前暫無活躍學生個案")) return;
 
-            for (let i = 0; i < trs.length; i++) {
-                const tr = trs[i];
+            let visibleCount = 0;
+            trs.forEach(tr => {
                 const textContent = tr.textContent || tr.innerText;
-                tr.style.display = (textContent.toUpperCase().indexOf(filter) > -1) ? "" : "none";
+                const isMatch = textContent.toUpperCase().indexOf(filter) > -1;
+                tr.style.display = isMatch ? "" : "none";
+                if (isMatch) visibleCount++;
+            });
+
+            // 處理搜尋不到結果的情況
+            const existingNoResult = document.getElementById('no-search-result-row');
+            if (existingNoResult) existingNoResult.remove();
+
+            if (visibleCount === 0 && filter !== "") {
+                const noResultRow = document.createElement('tr');
+                noResultRow.id = 'no-search-result-row';
+                noResultRow.innerHTML = `
+                    <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                        <i class="fa-solid fa-magnifying-glass text-2xl mb-2 opacity-20"></i>
+                        <p class="text-xs italic">找不到符合「${input.value}」的個案資料</p>
+                    </td>
+                `;
+                tbody.appendChild(noResultRow);
             }
         }
 
